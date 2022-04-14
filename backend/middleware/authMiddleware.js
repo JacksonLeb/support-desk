@@ -3,30 +3,32 @@ const asyncHandler = require('express-async-handler')
 const User = require('../models/userModel')
 
 const protect = asyncHandler(async (req, res, next) => {
-    let token
+  let token
 
-    if(req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        try {
-            //get token from header
-            token = req.headers.authorization.split(' ')[1]
-            
-            //verify token
-            const decoded = jwt.verify(token, process.env.JWT_SECRET)
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    try {
+      // Get token from header
+      token = req.headers.authorization.split(' ')[1]
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET)
+      // Get user from token
+      req.user = await User.findById(decoded.id).select('-password')
 
-            //get user from token
-            req.user = await User.findById(decoded.id).select('-passowrd')
-
-            next()
-        } catch (error) {
-            console.log(error)
-            res.status(401)
-            throw new Error("Not Authorized")
-        }
-    } 
-    if(!token) {
-        res.status(401)
-        throw new Error("Not Authorized")
+      next()
+    } catch (error) {
+      console.log(error)
+      res.status(401)
+      throw new Error('Not authorized')
     }
+  }
+
+  if (!token) {
+    res.status(401)
+    throw new Error('Not authorized')
+  }
 })
 
-module.exports = {protect}
+module.exports = { protect }
